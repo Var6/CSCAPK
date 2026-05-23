@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../lib/auth';
 import { colors, spacing, radius } from '../../lib/theme';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const { signIn } = useAuth();
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,30 +15,32 @@ export default function Login() {
   async function onLogin() {
     setError('');
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
-    if (error) setError(error.message);
+    try { await signIn(identifier.trim(), password); }
+    catch (e: any) { setError(e.message ?? 'Sign in failed'); }
+    finally { setLoading(false); }
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl, justifyContent: 'center' }}>
-          <View style={{ marginBottom: spacing.xxl }}>
-            <View style={{ width: 64, height: 64, borderRadius: radius.xl, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg }}>
-              <Text style={{ color: 'white', fontSize: 28, fontWeight: '900' }}>C</Text>
-            </View>
-            <Text style={{ fontSize: 28, fontWeight: '800', color: colors.text }}>Welcome back</Text>
-            <Text style={{ color: colors.textMuted, marginTop: 4 }}>Sign in to book your next ride.</Text>
+          <View style={{ alignItems: 'center', marginBottom: spacing.xxl }}>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={{ width: 160, height: 160, marginBottom: spacing.md }}
+              resizeMode="contain"
+            />
+            <Text style={{ fontSize: 28, fontWeight: '800', color: colors.text, textAlign: 'center' }}>Welcome back</Text>
+            <Text style={{ color: colors.textMuted, marginTop: 4, textAlign: 'center' }}>Sign in to book your next ride.</Text>
           </View>
 
-          <Label>Email</Label>
+          <Label>Phone or Email</Label>
           <TextInput
-            value={email}
-            onChangeText={setEmail}
+            value={identifier}
+            onChangeText={setIdentifier}
             autoCapitalize="none"
             keyboardType="email-address"
-            placeholder="you@example.com"
+            placeholder="9XXXXXXXXX or you@example.com"
             placeholderTextColor={colors.textMuted}
             style={inputStyle}
           />
@@ -58,9 +61,9 @@ export default function Login() {
 
           <Pressable
             onPress={onLogin}
-            disabled={loading || !email || !password}
+            disabled={loading || !identifier || !password}
             style={({ pressed }) => ({
-              backgroundColor: loading || !email || !password ? colors.primaryLight : colors.primary,
+              backgroundColor: loading || !identifier || !password ? colors.primaryLight : colors.primary,
               padding: spacing.lg,
               borderRadius: radius.lg,
               alignItems: 'center',

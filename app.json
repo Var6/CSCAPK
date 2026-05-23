@@ -1,9 +1,9 @@
 {
   "expo": {
     "name": "CSC Travel",
-    "slug": "csctravel",
+    "slug": "csctravels",
     "scheme": "csctravel",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,13 +22,23 @@
     },
     "android": {
       "package": "com.csctravels.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDff5ZvVPjZE07fqrBvv-Pe-q3BHmdB_ns"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#f97316"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -44,8 +54,12 @@
       ]
     ],
     "extra": {
-      "SUPABASE_URL": "",
-      "SUPABASE_ANON_KEY": ""
-    }
+      "API_URL": "https://www.csctravels.com",
+      "router": {},
+      "eas": {
+        "projectId": "e28eb360-ee1b-478e-9c7d-302fbc98531f"
+      }
+    },
+    "owner": "rishabh_stark"
   }
 }

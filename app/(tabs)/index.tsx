@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, FlatList, ActivityIndicator, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT, UrlTile } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_DEFAULT, UrlTile } from '../../lib/Map';
 import * as Location from 'expo-location';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { searchPlaces, routeBetween, type GeocodeResult, type Route } from '../../lib/maps';
 import { estimateFare, formatINR, type TripKind, type VehicleKind } from '../../lib/fare';
-import { supabase } from '../../lib/supabase';
+import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { colors, spacing, radius } from '../../lib/theme';
 
@@ -15,7 +15,7 @@ const PATNA = { latitude: 25.5941, longitude: 85.1376 };
 type Picked = { name: string; lat: number; lng: number } | null;
 
 export default function Home() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const mapRef = useRef<MapView>(null);
 
   const [region, setRegion] = useState({ ...PATNA, latitudeDelta: 0.08, longitudeDelta: 0.08 });
@@ -124,7 +124,7 @@ export default function Home() {
   }
 
   const fare = route
-    ? estimateFare({ distanceKm: route.distanceKm, tripKind, vehicle, discountPct: profile?.discount_pct ?? 0 })
+    ? estimateFare({ distanceKm: route.distanceKm, tripKind, vehicle, discountPct: 0 })
     : null;
 
   async function onConfirmBooking() {
@@ -138,33 +138,25 @@ export default function Home() {
       ? new Date(scheduledAt)
       : (() => { const d = new Date(); d.setMinutes(d.getMinutes() + 15); return d; })();
 
-    const { error } = await supabase.from('bookings').insert({
-      user_id: user.id,
-      customer_name: profile?.full_name ?? user.email ?? 'App user',
-      phone: profile?.phone ?? '',
-      email: user.email,
-      pickup: pickup.name,
-      drop_location: drop.name,
-      pickup_at: pickupAt.toISOString(),
-      vehicle_type: vehicle,
-      trip_type: tripKind === 'city' || tripKind === 'one_way' ? 'one_way' : tripKind === 'outstation' ? 'outstation' : 'hourly',
-      passengers,
-      pickup_lat: pickup.lat,
-      pickup_lng: pickup.lng,
-      drop_lat: drop.lat,
-      drop_lng: drop.lng,
-      distance_km: route.distanceKm.toFixed(2),
-      estimated_fare: fare.preDiscount,
-      discount_pct: fare.discountPct,
-      final_fare: fare.total,
-      is_scheduled: scheduled,
-    });
-
-    setBooking(false);
-    if (error) {
-      Alert.alert('Booking failed', error.message);
+    try {
+      await api('/api/rides', {
+        method: 'POST',
+        body: {
+          pickup: { address: pickup.name, lat: pickup.lat, lng: pickup.lng },
+          dropoff: { address: drop.name, lat: drop.lat, lng: drop.lng },
+          tripType: 'one_way',
+          scheduledAt: pickupAt.toISOString(),
+          paymentMode: 'cash',
+          notes: scheduled ? `Scheduled · ${vehicle} · ${passengers} pax` : `${vehicle} · ${passengers} pax`,
+        },
+      });
+    } catch (e: any) {
+      setBooking(false);
+      Alert.alert('Booking failed', e.message ?? 'Try again');
       return;
     }
+
+    setBooking(false);
     Alert.alert(
       scheduled ? 'Scheduled!' : 'Booked!',
       scheduled

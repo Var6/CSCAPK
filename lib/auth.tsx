@@ -1,73 +1,87 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { api, getToken, setToken } from './api';
 
-export interface Profile {
-  id: string;
-  full_name: string | null;
-  phone: string | null;
-  promocode: string | null;
-  discount_pct: number;
+export interface User {
+  _id: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  address?: string | null;
+  totalRides?: number;
+  role: 'customer';
 }
 
 interface AuthCtx {
-  session: Session | null;
   user: User | null;
-  profile: Profile | null;
   loading: boolean;
-  refreshProfile: () => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  signUp: (input: { name: string; phone: string; email?: string; password: string; address?: string }) => Promise<void>;
+  refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx>({
-  session: null, user: null, profile: null, loading: true,
-  refreshProfile: async () => {},
+  user: null,
+  loading: true,
+  signIn: async () => {},
+  signUp: async () => {},
+  refresh: async () => {},
   signOut: async () => {},
 });
 
+interface AuthResponse { token: string; user: User }
+interface MeResponse { user: User }
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadProfile(userId: string) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, phone, promocode, discount_pct')
-      .eq('id', userId)
-      .single();
-    setProfile((data as Profile) ?? null);
+  async function fetchMe() {
+    try {
+      const data = await api<MeResponse>('/api/auth/me');
+      setUser(data.user);
+    } catch {
+      await setToken(null);
+      setUser(null);
+    }
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (data.session?.user) loadProfile(data.session.user.id).finally(() => setLoading(false));
-      else setLoading(false);
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      if (s?.user) loadProfile(s.user.id);
-      else setProfile(null);
-    });
-
-    return () => { sub.subscription.unsubscribe(); };
+    (async () => {
+      const t = await getToken();
+      if (t) await fetchMe();
+      setLoading(false);
+    })();
   }, []);
 
+  const signIn: AuthCtx['signIn'] = async (identifier, password) => {
+    const data = await api<AuthResponse>('/api/auth/login', {
+      method: 'POST',
+      auth: false,
+      body: { identifier, password },
+    });
+    await setToken(data.token);
+    setUser(data.user);
+  };
+
+  const signUp: AuthCtx['signUp'] = async (input) => {
+    const data = await api<AuthResponse>('/api/auth/register', {
+      method: 'POST',
+      auth: false,
+      body: input,
+    });
+    await setToken(data.token);
+    setUser(data.user);
+  };
+
+  const signOut = async () => {
+    try { await api('/api/auth/logout', { method: 'POST' }); } catch {}
+    await setToken(null);
+    setUser(null);
+  };
+
   return (
-    <Ctx.Provider
-      value={{
-        session,
-        user: session?.user ?? null,
-        profile,
-        loading,
-        refreshProfile: async () => {
-          if (session?.user) await loadProfile(session.user.id);
-        },
-        signOut: async () => { await supabase.auth.signOut(); },
-      }}
-    >
+    <Ctx.Provider value={{ user, loading, signIn, signUp, refresh: fetchMe, signOut }}>
       {children}
     </Ctx.Provider>
   );

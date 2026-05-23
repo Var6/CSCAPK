@@ -6,16 +6,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../lib/auth';
 
 function Gate() {
-  const { session, loading } = useAuth();
+  const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === '(auth)';
-    if (!session && !inAuth) router.replace('/(auth)/login');
-    if (session && inAuth) router.replace('/(tabs)');
-  }, [session, loading, segments]);
+    if (!user && !inAuth) router.replace('/(auth)/login');
+    if (user && inAuth) router.replace('/(tabs)');
+  }, [user, loading, segments]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
