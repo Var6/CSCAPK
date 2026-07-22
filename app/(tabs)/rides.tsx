@@ -3,7 +3,7 @@ import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../lib/auth';
-import { api } from '../../lib/api';
+import { api, BILLING_URL } from '../../lib/api';
 import { colors, spacing, radius } from '../../lib/theme';
 import { formatINR } from '../../lib/fare';
 
@@ -13,7 +13,9 @@ interface Ride {
   pickup: { address: string };
   dropoff: { address: string };
   vehicleType: string;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  // Mirrors CSCBilling's Trip.status: a driver has claimed it ("accepted"),
+  // is driving it ("ongoing"), or it is done.
+  status: 'pending' | 'accepted' | 'ongoing' | 'completed' | 'cancelled';
   fare: number;
   distance: number;
   otp?: string;
@@ -25,11 +27,20 @@ interface Ride {
 }
 
 const STATUS_COLOR: Record<Ride['status'], { bg: string; fg: string }> = {
-  pending:     { bg: '#fef3c7', fg: '#92400e' },
-  confirmed:   { bg: '#dbeafe', fg: '#1e40af' },
-  in_progress: { bg: '#fde68a', fg: '#92400e' },
-  completed:   { bg: '#d1fae5', fg: '#065f46' },
-  cancelled:   { bg: '#e5e7eb', fg: '#374151' },
+  pending:   { bg: '#fef3c7', fg: '#92400e' },
+  accepted:  { bg: '#dbeafe', fg: '#1e40af' },
+  ongoing:   { bg: '#fde68a', fg: '#92400e' },
+  completed: { bg: '#d1fae5', fg: '#065f46' },
+  cancelled: { bg: '#e5e7eb', fg: '#374151' },
+};
+
+/** Riders should not have to read our internal state names. */
+const STATUS_LABEL: Record<Ride['status'], string> = {
+  pending:   'Finding driver',
+  accepted:  'Driver assigned',
+  ongoing:   'On the way',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
 };
 
 export default function Rides() {
@@ -41,7 +52,7 @@ export default function Rides() {
   async function load() {
     if (!user) return;
     try {
-      const data = await api<{ rides: Ride[] }>('/api/rides?limit=50');
+      const data = await api<{ rides: Ride[] }>('/api/customer/rides', { baseUrl: BILLING_URL });
       setRides(data.rides ?? []);
     } catch {
       setRides([]);
@@ -93,7 +104,9 @@ export default function Rides() {
                   {item.otp ? <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>OTP: <Text style={{ fontWeight: '800', color: colors.text }}>{item.otp}</Text></Text> : null}
                 </View>
                 <View style={{ backgroundColor: s.bg, paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill }}>
-                  <Text style={{ color: s.fg, fontWeight: '700', fontSize: 11, textTransform: 'uppercase' }}>{item.status.replace('_', ' ')}</Text>
+                  <Text style={{ color: s.fg, fontWeight: '700', fontSize: 11, textTransform: 'uppercase' }}>
+                    {STATUS_LABEL[item.status] ?? item.status}
+                  </Text>
                 </View>
               </View>
               <Row label="🟢" text={item.pickup?.address ?? ''} />

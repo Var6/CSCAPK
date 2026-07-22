@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../lib/auth';
+import { RatesProvider } from '../lib/useRates';
 
 function Gate() {
   const { user, loading } = useAuth();
@@ -30,8 +31,10 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <Gate />
-          <StatusBar style="dark" />
+          <RatesProvider>
+            <Gate />
+            <StatusBar style="dark" />
+          </RatesProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

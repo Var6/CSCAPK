@@ -22,11 +22,6 @@
     },
     "android": {
       "package": "com.csctravels.app",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyDff5ZvVPjZE07fqrBvv-Pe-q3BHmdB_ns"
-        }
-      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#f97316"
@@ -54,7 +49,6 @@
       ]
     ],
     "extra": {
-      "API_URL": "https://www.csctravels.com",
       "router": {},
       "eas": {
         "projectId": "e28eb360-ee1b-478e-9c7d-302fbc98531f"

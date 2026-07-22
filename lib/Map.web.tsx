@@ -24,6 +24,7 @@ export const Polyline = (_: AnyProps) => null;
 export const UrlTile = (_: AnyProps) => null;
 export const PROVIDER_DEFAULT = undefined as unknown as string;
 export const PROVIDER_GOOGLE = undefined as unknown as string;
+export const mapProvider = undefined;
 export const Callout = (_: AnyProps) => null;
 
 export default MapView;

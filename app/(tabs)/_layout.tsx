@@ -35,6 +35,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="rental"
+        options={{
+          title: 'Self Drive',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'key' : 'key-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="rides"
         options={{
           title: 'My Rides',

@@ -1,10 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Base URL for the CSCTravels Next.js backend (Mongo + JWT).
-// Override per-environment in app.json -> extra.API_URL.
+// Two backends, deliberately:
+//
+//   API_URL     www.csctravels.com — customer auth and ride bookings.
+//   BILLING_URL app.csctravels.com — the CSCBilling console. Serves the live
+//               rate card (/api/rates) and proxies Google Places/Directions
+//               (/api/maps/*) so the billed server key never ships in the app.
+//
+// Both are injected by app.config.js from .env.local.
 const API_URL = (Constants.expoConfig?.extra?.API_URL as string | undefined)
-  ?? 'http://localhost:3000';
+  ?? 'https://www.csctravels.com';
+
+const BILLING_URL = (Constants.expoConfig?.extra?.BILLING_URL as string | undefined)
+  ?? 'https://app.csctravels.com';
 
 const TOKEN_KEY = 'csctravel.token';
 
@@ -26,10 +35,12 @@ export async function setToken(token: string | null) {
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   auth?: boolean;
+  /** Defaults to API_URL. Pass BILLING_URL for rate-card and maps calls. */
+  baseUrl?: string;
 }
 
 export async function api<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const { body, auth = true, headers, ...rest } = opts;
+  const { body, auth = true, headers, baseUrl = API_URL, ...rest } = opts;
   const h: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(headers as Record<string, string> | undefined),
@@ -38,7 +49,7 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
     const token = await getToken();
     if (token) h.Authorization = `Bearer ${token}`;
   }
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${baseUrl}${path}`, {
     ...rest,
     headers: h,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -53,4 +64,4 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
   return parsed as T;
 }
 
-export { API_URL };
+export { API_URL, BILLING_URL };
