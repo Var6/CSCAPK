@@ -134,15 +134,17 @@ export const DEFAULT_RATES: RateCard = {
   ],
 
   rental: {
+    // SUV not offered for self-drive. Live values come from CSCBilling; this
+    // bundled copy only applies when the app is offline at first launch.
     packages: [
-      { id: 'sd-8h', label: '8 Hours', hours: 8, includedKm: 80, price: { hatchback: 1400, sedan: 1600, suv: 1800 } },
-      { id: 'sd-12h', label: '12 Hours', hours: 12, includedKm: 120, price: { hatchback: 1900, sedan: 2200, suv: 2500 } },
-      { id: 'sd-24h', label: '24 Hours', hours: 24, includedKm: 200, price: { hatchback: 2800, sedan: 3200, suv: 3700 } },
-      { id: 'sd-weekly', label: '7 Days', hours: 168, includedKm: 1200, price: { hatchback: 16000, sedan: 19000, suv: 22000 } },
+      { id: 'sd-8h', label: '8 Hours', hours: 8, includedKm: 80, price: { hatchback: 1500, sedan: 1800 } },
+      { id: 'sd-12h', label: '12 Hours', hours: 12, includedKm: 120, price: { hatchback: 1900, sedan: 2200 } },
+      { id: 'sd-24h', label: '24 Hours', hours: 24, includedKm: 200, price: { hatchback: 2800, sedan: 3200 } },
+      { id: 'sd-weekly', label: '7 Days', hours: 168, includedKm: 1200, price: { hatchback: 16000, sedan: 19000 } },
     ],
-    securityDeposit: { hatchback: 2000, sedan: 3000, suv: 4000 },
-    extraKm: { hatchback: 9, sedan: 11, suv: 13 },
-    extraHour: { hatchback: 180, sedan: 220, suv: 260 },
+    securityDeposit: { hatchback: 2000, sedan: 3000 },
+    extraKm: { hatchback: 9, sedan: 11 },
+    extraHour: { hatchback: 120, sedan: 150 },
     fuelPolicy: 'Fuel is not included. Return the vehicle at the same fuel level as pickup.',
     hubs: [
       { id: 'hub-patna-jn', name: 'Patna Junction Hub', address: 'Near Patna Junction, Patna 800001', lat: 25.6017, lng: 85.1370, opensAt: '06:00', closesAt: '22:00' },

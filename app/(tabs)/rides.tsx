@@ -19,6 +19,7 @@ interface Ride {
   fare: number;
   distance: number;
   otp?: string;
+  endOtp?: string;
   paymentMode?: string;
   paymentStatus?: string;
   scheduledAt?: string;
@@ -101,7 +102,6 @@ export default function Rides() {
                       📅 Pickup {new Date(item.scheduledAt!).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
                     </Text>
                   ) : null}
-                  {item.otp ? <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>OTP: <Text style={{ fontWeight: '800', color: colors.text }}>{item.otp}</Text></Text> : null}
                 </View>
                 <View style={{ backgroundColor: s.bg, paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill }}>
                   <Text style={{ color: s.fg, fontWeight: '700', fontSize: 11, textTransform: 'uppercase' }}>
@@ -111,6 +111,24 @@ export default function Rides() {
               </View>
               <Row label="🟢" text={item.pickup?.address ?? ''} />
               <Row label="🔴" text={item.dropoff?.address ?? ''} />
+
+              {/* Handoff codes. Share the START code to begin; the END code is
+                  only needed if the driver has to end before the destination. */}
+              {(item.status === 'pending' || item.status === 'accepted') && item.otp ? (
+                <OtpBar
+                  label="Share this OTP with your driver to START the ride"
+                  code={item.otp}
+                  tone="start"
+                />
+              ) : null}
+              {item.status === 'ongoing' && item.endOtp ? (
+                <OtpBar
+                  label="Only share this END OTP if the driver ends before your destination"
+                  code={item.endOtp}
+                  tone="end"
+                />
+              ) : null}
+
               {item.driver?.name ? (
                 <Text style={{ marginTop: spacing.sm, color: colors.textMuted, fontSize: 12 }}>
                   Driver: {item.driver.name} {item.driver.vehicleNumber ? `· ${item.driver.vehicleNumber}` : ''}
@@ -137,6 +155,21 @@ function Row({ label, text }: { label: string; text: string }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 4 }}>
       <Text>{label}</Text>
       <Text style={{ flex: 1, color: colors.text }} numberOfLines={1}>{text}</Text>
+    </View>
+  );
+}
+
+function OtpBar({ label, code, tone }: { label: string; code: string; tone: 'start' | 'end' }) {
+  const bg = tone === 'start' ? colors.primaryLight : '#fef3c7';
+  const fg = tone === 'start' ? colors.primaryDark : '#92400e';
+  return (
+    <View style={{
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: bg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+      marginTop: spacing.sm, gap: spacing.sm,
+    }}>
+      <Text style={{ flex: 1, fontSize: 11, color: fg, fontWeight: '600' }}>{label}</Text>
+      <Text style={{ fontSize: 22, fontWeight: '900', color: fg, letterSpacing: 4 }}>{code}</Text>
     </View>
   );
 }
